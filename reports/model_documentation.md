@@ -122,6 +122,9 @@ sampling_strategy = 0.1
 
 Rationale for 10:1 target: 50/50 balance would require 578 synthetic samples per real fraud — too artificial and noisy. 10:1 provides sufficient examples while keeping synthetic samples statistically realistic.
 
+**Note on parameter choice:** sampling_strategy=0.1 (10:1 target ratio) was chosen over 50:50 balancing because creating 578 
+synthetic samples per real fraud transaction would make synthetic data dominate, potentially introducing noise rather than signal. A production system would evaluate multiple sampling ratios (5:1, 10:1, 20:1) via cross-validation and select the ratio maximising AUC-PR on a held-out validation set.
+
 **Layer 2 — scale_pos_weight:**
 XGBoost parameter set to 10 (post-SMOTE ratio). Penalises misclassification of fraud 10x more than legitimate.Handles remaining imbalance at algorithm level.
 
@@ -236,6 +239,15 @@ European cardholder behaviour. Fraud patterns differ by market — Indian UPI fr
 
 **6. Threshold is F1-optimal, not cost-optimal**
 The optimal threshold maximises F1. A production system would tune threshold based on actual fraud loss amounts and customer service costs — which vary by bank and market.
+
+**7. Hyperparameter tuning**
+XGBoost parameters (max_depth=6, learning_rate=0.05, subsample=0.8, colsample_bytree=0.8) were set to empirically validated defaults from XGBoost literature. A production implementation would use cross-validated hyperparameter search (GridSearchCV or Optuna) to optimise these values for the specific dataset and business objective.
+
+**8. Feature importance concentration risk**
+V14 alone accounts for 46.7% of model importance. If this PCA component becomes unavailable in production (data pipeline failure, vendor change), model performance would degrade significantly. A production system would monitor V14's distribution continuously and implement fallback logic.
+
+**9. Threshold is F1-optimal, not cost-optimal**
+The optimal threshold of 0.976 maximises F1 score. A production system would tune threshold based on actual, empirically measured fraud loss amounts and customer service costs — which vary by bank, market, and product type. The €15 false positive cost used here is an illustrative assumption.
 
 ---
 
